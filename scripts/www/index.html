@@ -1,88 +1,838 @@
 <!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <link rel="stylesheet" href="./static/css/styles.css" />
-        <meta
-            http-equiv="Content-Security-Policy"
-            content="default-src * 'unsafe-inline' 'unsafe-eval'"
-        />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Tauri App</title>
-        <script src="./static/js/main.js"></script>
-    </head>
-    <body>
-        <main class="container">
-            <h1>Welcome to TauriMan</h1>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智能挑码</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+        }
 
-            <div class="row">
-                <a
-                    href="https://tauri.app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="./assets/tauri.svg"
-                        class="logo tauri"
-                        alt="Tauri logo"
-                    />
-                </a>
-                <a
-                    href="https://pakeplus.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <img
-                        src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/app-icon.png"
-                        class="logo vanilla"
-                        alt="JavaScript logo"
-                    />
-                </a>
-            </div>
-            <p>Click to get data</p>
-            <form class="row" id="greet-form">
-                <input id="greet-input" placeholder="Enter a name..." />
-                <button type="submit" id="getdata">GET DATA</button>
-            </form>
-            <div class="functions">
-                <a href="./book.html" target="_self">跳转到book.html</a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    >跳到百度blank
-                </a>
-                <a
-                    href="https://www.baidu.com"
-                    target="_self"
-                    rel="noopener noreferrer"
-                >
-                    跳到百度self
-                </a>
-                <button onclick="sayHello()">点击我</button>
-                <button onclick="sayHello()">下载文件</button>
-                <button onclick="sayHello()">上传文件</button>
-                <button onclick="sayHello()">访问相机</button>
-                <button onclick="sayHello()">访问麦克风</button>
-                <button onclick="sayHello()">访问相册</button>
-                <button class="btn" onclick="openWechat()">打开微信</button>
-                <button class="btn" onclick="openWechatScan()">
-                    打开扫一扫
-                </button>
-                <button class="btn" onclick="openZhihu()">打开知乎</button>
-                <button onclick="sayHello()">打开抖音</button>
-                <button onclick="sayHello()">用浏览器打开</button>
-                <button>打开知乎</button>
-            </div>
-            <p id="greet-msg"></p>
-            <img src="./static/image/cursor.jpeg" alt="logo" />
-            <video
-                src="https://hk.gh-proxy.org/https://github.com/Sjj1024/PakePlus/blob/main/docs/static/videos/pakeplus.mp4"
-                autoplay
-                controls
-                style="width: 100%; height: 100%"
-            ></video>
-            <audio src="./static/music/yin.mp3" controls></audio>
-        </main>
-    </body>
+        body {
+            background: #e5ddd5;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 950px;
+            height: 100vh;
+            background-color: #f0f2f5;
+            border-radius: 10px 10px 5px 5px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .chat-header {
+            background: #ffffff;
+            padding: 10px 10px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #e9edef;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            flex-shrink: 0;
+        }
+
+        .chat-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2c33;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chat-header h2 i {
+            color: #02b875;
+        }
+
+        .chat-header .actions {
+            margin-left: auto;
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-header .actions button {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: #54656f;
+            cursor: pointer;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .chat-header .actions button:hover {
+            background: #f0f2f5;
+        }
+
+        .message-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px 12px 8px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #efeae2;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23efeae2" opacity="0.4"/></svg>');
+            -webkit-overflow-scrolling: touch;
+            transition: padding-bottom 0.2s ease;
+        }
+
+        .message-row {
+            display: flex;
+            width: 100%;
+        }
+
+        .message-row.user {
+            justify-content: flex-end;
+        }
+
+        .message-row.bot {
+            justify-content: flex-start;
+        }
+
+        .message-bubble {
+            max-width: 75%;
+            padding: 10px 14px;
+            border-radius: 20px;
+            position: relative;
+            word-break: break-word;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-size: 0.95rem;
+            line-height: 1.45;
+        }
+
+        .user .message-bubble {
+            background: #d9fdd3;
+            border-bottom-right-radius: 4px;
+            color: #111b21;
+        }
+
+        .bot .message-bubble {
+            background: #ffffff;
+            border-bottom-left-radius: 4px;
+            color: #111b21;
+        }
+
+        .message-meta {
+            font-size: 0.65rem;
+            color: #667781;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .number-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0 4px;
+            justify-content: flex-start;
+        }
+
+        .number-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px 5px 8px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: 0.1s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .number-chip .animal-small {
+            font-size: 0.7rem;
+            font-weight: 400;
+            background: rgba(255,255,255,0.3);
+            padding: 2px 5px;
+            border-radius: 16px;
+            line-height: 1;
+        }
+
+        .stats-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: #3b4a54;
+        }
+
+        .stats-line .count-badge {
+            background: #e7edf2;
+            padding: 2px 10px;
+            border-radius: 30px;
+        }
+
+        /* 输入栏默认固定在底部 */
+        .input-area {
+            background: #f0f2f5;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #e9edef;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+            width: 100%;
+        }
+
+        .input-area .text-input {
+            flex: 1;
+            border: none;
+            background: white;
+            border-radius: 24px;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            min-width: 0;
+        }
+
+        .input-area .send-btn {
+            background: #02b875;
+            border: none;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(2,184,117,0.2);
+            transition: background 0.2s, transform 0.1s;
+            flex-shrink: 0;
+        }
+
+        .input-area .send-btn:active {
+            background: #029d62;
+            transform: scale(0.95);
+        }
+
+        .legend-tip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            font-size: 0.7rem;
+            color: #5f6b76;
+            background: #f7f9fa;
+            padding: 8px 12px;
+            border-radius: 24px;
+            margin-bottom: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+
+        .example-hint {
+            background: #f1f5f8;
+            border-radius: 18px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: #2c3e50;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #8596a0;
+            padding: 6px 0;
+            background: #f0f2f5;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="chat-container" id="chatContainer">
+    <div class="chat-header">
+        <h2>
+            <i class="fab fa-weixin"></i> 智能挑码助手
+        </h2>
+        <div class="actions">
+            <button id="clearChatBtn" title="清空聊天"><i class="fas fa-trash-alt"></i></button>
+            <button id="helpBtn" title="使用示例"><i class="fas fa-question-circle"></i></button>
+        </div>
+    </div>
+
+    <div class="message-list" id="messageList">
+        <!-- 动态消息 -->
+    </div>
+
+    <div class="input-area" id="inputArea">
+        <input type="text" class="text-input" id="messageInput" placeholder="例如：尾123 红 大 男" autocomplete="off">
+        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <footer>© 智能挑码机器人</footer>
+</div>
+
+<script>
+    (function() {
+        // ---------- 试用期配置 ----------
+        const TRIAL_DAYS = 30;
+        const WARNING_DAYS = 5;
+        const CONTACT_WECHAT = '13459210987';
+        const DB_NAME = 'TrialDB';
+        const STORE_NAME = 'trialStore';
+        const KEY = 'firstUseTime';
+
+        let cachedFirstUseTime = null;
+
+        // ---------- IndexedDB 工具 ----------
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+            });
+        }
+
+        async function getItemFromDB(key) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readonly');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.get(key);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                tx.oncomplete = () => db.close();
+            });
+        }
+
+        async function setItemToDB(key, value) {
+            const db = await openDB();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                const store = tx.objectStore(STORE_NAME);
+                const request = store.put(value, key);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve();
+                tx.oncomplete = () => db.close();
+            });
+        }
+
+        async function initTrialStorage() {
+            try {
+                const idbTime = await getItemFromDB(KEY);
+                const lsTime = localStorage.getItem(KEY);
+                if (idbTime) {
+                    if (!lsTime || parseInt(lsTime) > parseInt(idbTime)) {
+                        localStorage.setItem(KEY, idbTime);
+                    }
+                    cachedFirstUseTime = idbTime;
+                } else if (lsTime) {
+                    await setItemToDB(KEY, lsTime);
+                    cachedFirstUseTime = lsTime;
+                } else {
+                    cachedFirstUseTime = null;
+                }
+            } catch (e) {
+                console.warn('IndexedDB 读写失败，仅使用 localStorage', e);
+                cachedFirstUseTime = localStorage.getItem(KEY);
+            }
+        }
+        initTrialStorage();
+
+        function getTrialInfo() {
+            let firstUse = cachedFirstUseTime || localStorage.getItem(KEY);
+            if (!firstUse) {
+                return { isValid: true, daysLeft: TRIAL_DAYS, isFirst: true };
+            }
+            firstUse = parseInt(firstUse, 10);
+            const now = Date.now();
+            const daysUsed = (now - firstUse) / (1000 * 60 * 60 * 24);
+            const daysLeft = Math.max(0, TRIAL_DAYS - daysUsed);
+            const isValid = daysLeft > 0;
+            return { isValid, daysLeft, firstUse, isFirst: false };
+        }
+
+        async function activateTrial() {
+            if (cachedFirstUseTime || localStorage.getItem(KEY)) return;
+            const now = Date.now().toString();
+            localStorage.setItem(KEY, now);
+            cachedFirstUseTime = now;
+            try {
+                await setItemToDB(KEY, now);
+            } catch (e) {
+                console.warn('写入 IndexedDB 失败', e);
+            }
+        }
+
+        // ---------- 原始数据映射 ----------
+        const mapping = {
+            '马': [1, 13, 25, 37, 49],
+            '蛇': [2, 14, 26, 38],
+            '龙': [3, 15, 27, 39],
+            '兔': [4, 16, 28, 40],
+            '虎': [5, 17, 29, 41],
+            '牛': [6, 18, 30, 42],
+            '鼠': [7, 19, 31, 43],
+            '猪': [8, 20, 32, 44],
+            '狗': [9, 21, 33, 45],
+            '鸡': [10, 22, 34, 46],
+            '猴': [11, 23, 35, 47],
+            '羊': [12, 24, 36, 48]
+        };
+        const redNumbers = [1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46];
+        const blueNumbers = [3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48];
+        const greenNumbers = [5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49];
+        const homeAnimals = [1,6,8,9,10,12,13,18,20,21,22,24,25,30,32,33,34,36,37,42,44,45,46,48,49];
+        const wildAnimals = [2,3,4,5,7,11,14,15,16,17,19,23,26,27,28,29,31,35,38,39,40,41,43,47];
+        const skyAnimals = [1,3,4,6,8,11,13,15,16,18,20,23,25,27,28,30,32,35,37,39,40,42,44,47,49];
+        const earthAnimals = [2,5,7,9,10,12,14,17,19,21,22,24,26,29,31,33,34,36,38,41,43,45,46,48];
+        const hedans = [1,3,5,7,9,10,12,14,16,18,21,23,25,27,29,30,32,34,36,38,41,43,45,47,49];
+        const hesuangs = [2,4,6,8,11,13,15,17,19,20,22,24,26,28,31,33,35,37,39,40,42,44,46,48];
+        const hedas = [7,8,9,16,17,18,19,25,26,27,28,29,34,35,36,37,38,39,43,44,45,46,47,48,49];
+        const hexiaos = [1,2,3,4,5,6,10,11,12,13,14,15,20,21,22,23,24,30,31,32,33,40,41,42];
+        const wujins = [4,5,12,13,26,27,34,35,42,43];
+        const wumus = [8,9,16,17,24,25,38,39,46,47];
+        const wushuis = [1,14,15,22,23,30,31,44,45];
+        const wuhuos = [2,3,10,11,18,19,32,33,40,41,48,49];
+        const wutus = [6,7,20,21,28,29,36,37];
+        const duanNumbers = {
+            '1': [1,2,3,4,5,6,7],
+            '2': [8,9,10,11,12,13,14],
+            '3': [15,16,17,18,19,20,21],
+            '4': [22,23,24,25,26,27,28],
+            '5': [29,30,31,32,33,34,35],
+            '6': [36,37,38,39,40,41,42],
+            '7': [43,44,45,46,47,48,49]
+        };
+        const sizeNumbers = {
+            '大': [25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49],
+            '小': [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24]
+        };
+        const tailNumbers = {
+            '尾0': [10,20,30,40],
+            '尾1': [1,11,21,31,41],
+            '尾2': [2,12,22,32,42],
+            '尾3': [3,13,23,33,43],
+            '尾4': [4,14,24,34,44],
+            '尾5': [5,15,25,35,45],
+            '尾6': [6,16,26,36,46],
+            '尾7': [7,17,27,37,47],
+            '尾8': [8,18,28,38,48],
+            '尾9': [9,19,29,39,49]
+        };
+        const headNumbers = {
+            '头0': [1,2,3,4,5,6,7,8,9],
+            '头1': [10,11,12,13,14,15,16,17,18,19],
+            '头2': [20,21,22,23,24,25,26,27,28,29],
+            '头3': [30,31,32,33,34,35,36,37,38,39],
+            '头4': [40,41,42,43,44,45,46,47,48,49]
+        };
+        const oddEvenNumbers = {
+            '单': [1,3,5,7,9,11,13,15,17,19,21,23,25,27,29,31,33,35,37,39,41,43,45,47,49],
+            '双': [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48]
+        };
+
+        const genderMale = [1,3,5,6,7,9,11,13,15,17,18,19,21,23,25,27,29,30,31,33,35,37,39,41,42,43,45,47,49];
+        const genderFemale = [2,4,8,10,12,14,16,20,22,24,26,28,32,34,36,38,40,44,46,48];
+        const spring = [3,4,5,15,16,17,27,28,29,39,40,41];
+        const summer = [1,2,12,13,14,24,25,26,36,37,38,48,49];
+        const autumn = [9,10,11,21,22,23,33,34,35,45,46,47];
+        const winter = [6,7,8,18,19,20,30,31,32,42,43,44];
+        const wind = [3,4,5,15,16,17,27,28,29,39,40,41];
+        const rain = [6,7,8,18,19,20,30,31,32,42,43,44];
+        const thunder = [1,2,12,13,14,24,25,26,36,37,38,48,49];
+        const lightning = [9,10,11,21,22,23,33,34,35,45,46,47];
+        const qin = [2,4,10,14,16,22,26,28,34,38,40,46];
+        const qi = [6,7,9,18,19,21,30,31,33,42,43,45];
+        const shu = [1,3,5,13,15,17,25,27,29,37,39,41,49];
+        const hua = [8,11,12,20,23,24,32,35,36,44,47,48];
+        const beauty = [1,2,3,4,10,12,13,14,15,16,22,24,25,26,27,28,34,36,37,38,39,40,46,48,49];
+        const ugly = [5,6,7,8,9,11,17,18,19,20,21,23,29,30,31,32,33,35,41,42,43,44,45,47];
+
+        const conditionMapping = {
+            ...mapping,
+            '大': sizeNumbers['大'],
+            '小': sizeNumbers['小'],
+            '红': redNumbers,
+            '蓝': blueNumbers,
+            '绿': greenNumbers,
+            '尾0': tailNumbers['尾0'],
+            '尾1': tailNumbers['尾1'],
+            '尾2': tailNumbers['尾2'],
+            '尾3': tailNumbers['尾3'],
+            '尾4': tailNumbers['尾4'],
+            '尾5': tailNumbers['尾5'],
+            '尾6': tailNumbers['尾6'],
+            '尾7': tailNumbers['尾7'],
+            '尾8': tailNumbers['尾8'],
+            '尾9': tailNumbers['尾9'],
+            '头0': headNumbers['头0'],
+            '头1': headNumbers['头1'],
+            '头2': headNumbers['头2'],
+            '头3': headNumbers['头3'],
+            '头4': headNumbers['头4'],
+            '合大': hedas,
+            '合小': hexiaos,
+            '合单': hedans,
+            '合双': hesuangs,
+            '家': homeAnimals,
+            '野': wildAnimals,
+            '单': oddEvenNumbers['单'],
+            '双': oddEvenNumbers['双'],
+            '天': skyAnimals,
+            '地': earthAnimals,
+            '金': wujins,
+            '木': wumus,
+            '水': wushuis,
+            '火': wuhuos,
+            '土': wutus,
+            '1段': duanNumbers['1'],
+            '2段': duanNumbers['2'],
+            '3段': duanNumbers['3'],
+            '4段': duanNumbers['4'],
+            '5段': duanNumbers['5'],
+            '6段': duanNumbers['6'],
+            '7段': duanNumbers['7'],
+            '男': genderMale,
+            '女': genderFemale,
+            '春': spring,
+            '夏': summer,
+            '秋': autumn,
+            '冬': winter,
+            '风': wind,
+            '雨': rain,
+            '雷': thunder,
+            '电': lightning,
+            '琴': qin,
+            '棋': qi,
+            '书': shu,
+            '画': hua,
+            '美': beauty,
+            '丑': ugly
+        };
+
+        const categoryMap = {};
+        const shengxiao = ['马','蛇','龙','兔','虎','牛','鼠','猪','狗','鸡','猴','羊'];
+        shengxiao.forEach(k => categoryMap[k] = 'shengxiao');
+        ['大','小'].forEach(k => categoryMap[k] = 'size');
+        ['红','蓝','绿'].forEach(k => categoryMap[k] = 'color');
+        ['尾0','尾1','尾2','尾3','尾4','尾5','尾6','尾7','尾8','尾9'].forEach(k => categoryMap[k] = 'tail');
+        ['头0','头1','头2','头3','头4'].forEach(k => categoryMap[k] = 'head');
+        ['合大','合小','合单','合双'].forEach(k => categoryMap[k] = 'he');
+        ['家','野'].forEach(k => categoryMap[k] = 'homewild');
+        ['单','双'].forEach(k => categoryMap[k] = 'oddeven');
+        ['天','地'].forEach(k => categoryMap[k] = 'skyearth');
+        ['金','木','水','火','土'].forEach(k => categoryMap[k] = 'wuxing');
+        ['1段','2段','3段','4段','5段','6段','7段'].forEach(k => categoryMap[k] = 'duan');
+        ['男','女'].forEach(k => categoryMap[k] = 'gender');
+        ['春','夏','秋','冬'].forEach(k => categoryMap[k] = 'season');
+        ['风','雨','雷','电'].forEach(k => categoryMap[k] = 'weather');
+        ['琴','棋','书','画'].forEach(k => categoryMap[k] = 'art');
+        ['美','丑'].forEach(k => categoryMap[k] = 'beauty');
+
+        function getAnimal(num) {
+            for (const [animal, nums] of Object.entries(mapping)) {
+                if (nums.includes(num)) return animal;
+            }
+            return '';
+        }
+
+        function getNumberColor(num) {
+            if (redNumbers.includes(num)) return 'linear-gradient(145deg, #e74c3c, #c0392b)';
+            if (blueNumbers.includes(num)) return 'linear-gradient(145deg, #3498db, #2980b9)';
+            if (greenNumbers.includes(num)) return 'linear-gradient(145deg, #2ecc71, #27ae60)';
+            return 'linear-gradient(145deg, #95a5a6, #7f8c8d)';
+        }
+
+        function parseConditionsFromText(text) {
+            const allNumbers = Array.from({ length: 49 }, (_, i) => i + 1);
+            let killNumbers = [];
+            const tokens = text.split(/[\s,，]+/).filter(t => t.trim() !== '');
+            const sortedKeys = Object.keys(conditionMapping).sort((a,b) => b.length - a.length);
+            const regex = new RegExp(sortedKeys.join('|'), 'g');
+            let rawConditionKeys = [];
+
+            tokens.forEach(token => {
+                if (token.startsWith('杀') && token.length > 1) {
+                    const numPart = token.substring(1);
+                    const nums = numPart.match(/\d+/g);
+                    if (nums) {
+                        nums.forEach(n => {
+                            let v = parseInt(n, 10);
+                            if (v >= 1 && v <= 49) killNumbers.push(v);
+                        });
+                    }
+                    return;
+                }
+                let matchedSpecial = false;
+                if (token.startsWith('尾')) {
+                    const numStr = token.substring(1);
+                    if (/^\d+$/.test(numStr)) {
+                        for (let ch of numStr) {
+                            const cond = '尾' + ch;
+                            if (conditionMapping[cond]) {
+                                rawConditionKeys.push(cond);
+                                matchedSpecial = true;
+                            }
+                        }
+                    }
+                }
+                if (token.startsWith('头')) {
+                    const numStr = token.substring(1);
+                    if (/^\d+$/.test(numStr)) {
+                        for (let ch of numStr) {
+                            const cond = '头' + ch;
+                            if (conditionMapping[cond]) {
+                                rawConditionKeys.push(cond);
+                                matchedSpecial = true;
+                            }
+                        }
+                    }
+                }
+                if (matchedSpecial) return;
+                const matches = token.match(regex);
+                if (matches) {
+                    rawConditionKeys.push(...matches);
+                }
+            });
+
+            rawConditionKeys = [...new Set(rawConditionKeys)];
+            const categoryArrays = {};
+            rawConditionKeys.forEach(key => {
+                const cat = categoryMap[key];
+                if (cat && conditionMapping[key]) {
+                    if (!categoryArrays[cat]) categoryArrays[cat] = [];
+                    categoryArrays[cat].push(conditionMapping[key]);
+                }
+            });
+
+            const categoryUnions = {};
+            for (let cat in categoryArrays) {
+                const arrays = categoryArrays[cat];
+                const union = [];
+                arrays.forEach(arr => union.push(...arr));
+                categoryUnions[cat] = [...new Set(union)];
+            }
+
+            let result = allNumbers;
+            const unionList = Object.values(categoryUnions);
+            if (unionList.length > 0) {
+                result = unionList.reduce((acc, set) => {
+                    return acc.filter(num => set.includes(num));
+                }, allNumbers);
+            }
+            if (killNumbers.length > 0) {
+                result = result.filter(num => !killNumbers.includes(num));
+            }
+            return [...new Set(result)].sort((a,b) => a-b);
+        }
+
+        // 聊天界面逻辑
+        const messageList = document.getElementById('messageList');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        const helpBtn = document.getElementById('helpBtn');
+        const chatContainer = document.getElementById('chatContainer');
+        const inputArea = document.getElementById('inputArea');
+
+        function addMessage(contentHtml, type = 'bot') {
+            const row = document.createElement('div');
+            row.className = `message-row ${type}`;
+            const bubble = document.createElement('div');
+            bubble.className = 'message-bubble';
+            bubble.innerHTML = contentHtml;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const meta = document.createElement('div');
+            meta.className = 'message-meta';
+            meta.innerText = time;
+            bubble.appendChild(meta);
+            row.appendChild(bubble);
+            messageList.appendChild(row);
+            messageList.scrollTop = messageList.scrollHeight;
+        }
+
+        function buildResultMessage(numbers, userText) {
+            if (numbers.length === 0) {
+                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红波 大 男</div>`;
+            }
+            let chipsHtml = '';
+            numbers.forEach(num => {
+                const animal = getAnimal(num);
+                const bg = getNumberColor(num);
+                chipsHtml += `<span class="number-chip" style="background: ${bg};">${num}<span class="animal-small">${animal}</span></span>`;
+            });
+            return `
+                <div style="margin-bottom: 4px;">🔍 条件：<span style="background:#eef3f7; padding:2px 8px; border-radius:16px;">${userText}</span></div>
+                <div class="number-grid">${chipsHtml}</div>
+                <div class="stats-line"><span>📊 共 ${numbers.length} 个数字</span><span class="count-badge"><i class="far fa-clock"></i> 实时筛选</span></div>
+            `;
+        }
+
+        function handleUserInput(inputText) {
+            if (!inputText.trim()) return;
+            const trial = getTrialInfo();
+            if (trial.isFirst) {
+                activateTrial();
+            }
+            const currentTrial = getTrialInfo();
+            if (!currentTrial.isValid) {
+                addMessage(`<div style="color:#e67e22;">⚠️ 您的30天试用期已结束，筛选功能已禁用。如需购买请联系微信号：${CONTACT_WECHAT}</div>`, 'bot');
+                return;
+            }
+            if (currentTrial.daysLeft <= WARNING_DAYS && currentTrial.daysLeft > 0) {
+                const daysLeftRounded = Math.ceil(currentTrial.daysLeft);
+                addMessage(`<div style="color:#e67e22;">🔔 您的试用期剩余 ${daysLeftRounded} 天，到期后将无法使用。如需购买请联系微信号：${CONTACT_WECHAT}</div>`, 'bot');
+            }
+            addMessage(`<div>${inputText.replace(/</g,'&lt;')}</div>`, 'user');
+            const numbers = parseConditionsFromText(inputText);
+            const resultHtml = buildResultMessage(numbers, inputText);
+            addMessage(resultHtml, 'bot');
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (text === '') return;
+            handleUserInput(text);
+            messageInput.value = '';
+            messageInput.blur();
+        }
+
+        function initWelcome() {
+            const welcomeHtml = `
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div><i class="fas fa-robot" style="color:#02b875;"></i> <strong>智能挑码机器人</strong></div>
+                    <div class="example-hint">
+                        ✅ 连写自动拆分： “尾123” → 尾1、尾2、尾3 (并集)<br>
+                        ✅ 杀码： 杀5 杀10 排除指定数字<br>
+                        ⚡ 示例：<span style="background:#e0eefc; padding:3px 6px; border-radius:12px;">春 美 红</span> → 春且美且红
+                    </div>
+                    <div class="legend-tip">
+                        <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 红波</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:#3498db;"></span> 蓝波</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:#2ecc71;"></span> 绿波</span>
+                        <span class="legend-item">数字旁小字为生肖</span>
+                    </div>
+                </div>
+            `;
+            addMessage(welcomeHtml, 'bot');
+        }
+
+        function clearChat() {
+            messageList.innerHTML = '';
+            initWelcome();
+        }
+
+        // ---------- 键盘防遮挡方案 ----------
+        let isKeyboardVisible = false;
+
+        function adjustForKeyboard() {
+            if (!window.visualViewport) return;
+
+            const visualViewport = window.visualViewport;
+            const keyboardHeight = window.innerHeight - visualViewport.height;
+            const effectiveKeyboardHeight = Math.max(0, keyboardHeight);
+
+            if (effectiveKeyboardHeight > 50) {
+                // 键盘弹出
+                if (!isKeyboardVisible) {
+                    isKeyboardVisible = true;
+                }
+                inputArea.style.transform = `translateY(-${effectiveKeyboardHeight}px)`;
+                messageList.style.paddingBottom = effectiveKeyboardHeight + 'px';
+                setTimeout(() => {
+                    messageList.scrollTop = messageList.scrollHeight;
+                }, 50);
+            } else {
+                // 键盘隐藏
+                if (isKeyboardVisible) {
+                    isKeyboardVisible = false;
+                    inputArea.style.transform = '';
+                    messageList.style.paddingBottom = '';
+                }
+            }
+        }
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', adjustForKeyboard);
+        }
+        window.addEventListener('resize', adjustForKeyboard);
+
+        messageInput.addEventListener('focus', () => {
+            setTimeout(adjustForKeyboard, 100);
+        });
+
+        messageInput.addEventListener('blur', () => {
+            setTimeout(adjustForKeyboard, 200);
+        });
+
+        sendBtn.addEventListener('click', () => {
+            messageInput.blur();
+        });
+
+        window.addEventListener('load', adjustForKeyboard);
+
+        // 事件绑定
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        clearChatBtn.addEventListener('click', clearChat);
+
+        helpBtn.addEventListener('click', () => {
+            const trial = getTrialInfo();
+            let daysLeftMsg = '';
+            if (trial.isFirst) {
+                daysLeftMsg = '剩余30天';
+            } else {
+                const daysLeftInt = Math.ceil(trial.daysLeft);
+                daysLeftMsg = `剩余${daysLeftInt}天`;
+            }
+            addMessage('💡 可用条件：生肖(马蛇龙兔虎牛鼠猪狗鸡猴羊)、红/蓝/绿、大/小、单/双、头0-4、尾0-9、合大/小/单/双、家/野、天/地、金木水火土、1-7段、男女、春夏秋冬、风雨雷电、琴棋书画、美丑。杀码(杀数字)。连写如“尾123”自动拆分。' + daysLeftMsg + '，到期停用，如需购买请联系微信号：' + CONTACT_WECHAT, 'bot');
+        });
+
+        // 启动
+        initWelcome();
+    })();
+</script>
+</body>
 </html>
