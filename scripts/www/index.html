@@ -21,13 +21,13 @@
             align-items: center;
             padding: 0;
             margin: 0;
-            overflow: hidden;
+            /* 移除 overflow: hidden，让容器控制滚动 */
         }
 
         .chat-container {
             width: 100%;
             max-width: 950px;
-            height: 100vh;
+            height: 100vh; /* 动态调整 */
             background-color: #f0f2f5;
             border-radius: 10px 10px 5px 5px;
             box-shadow: 0 6px 24px rgba(0,0,0,0.15);
@@ -36,6 +36,7 @@
             overflow: hidden;
             border: 1px solid rgba(0,0,0,0.05);
             position: relative;
+            transition: height 0.1s ease; /* 平滑过渡 */
         }
 
         .chat-header {
@@ -188,7 +189,7 @@
             border-radius: 30px;
         }
 
-        /* 输入栏默认固定在底部 */
+        /* 输入栏默认在底部 */
         .input-area {
             background: #f0f2f5;
             padding: 12px 16px;
@@ -197,7 +198,6 @@
             gap: 8px;
             border-top: 1px solid #e9edef;
             flex-shrink: 0;
-            transition: transform 0.2s ease;
             width: 100%;
         }
 
@@ -282,7 +282,7 @@
 <div class="chat-container" id="chatContainer">
     <div class="chat-header">
         <h2>
-            <i class="fab fa-weixin"></i> 智能挑码助手
+            <i class="fas fa-robot"></i> 智能挑码助手
         </h2>
         <div class="actions">
             <button id="clearChatBtn" title="清空聊天"><i class="fas fa-trash-alt"></i></button>
@@ -689,7 +689,7 @@
 
         function buildResultMessage(numbers, userText) {
             if (numbers.length === 0) {
-                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红波 大 男</div>`;
+                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红 大 男</div>`;
             }
             let chipsHtml = '';
             numbers.forEach(num => {
@@ -736,11 +736,11 @@
         function initWelcome() {
             const welcomeHtml = `
                 <div style="display:flex; flex-direction:column; gap:8px;">
-                    <div><i class="fas fa-robot" style="color:#02b875;"></i> <strong>智能挑码机器人</strong></div>
                     <div class="example-hint">
-                        ✅ 连写自动拆分： “尾123” → 尾1、尾2、尾3 (并集)<br>
+                        ✅ “尾123” → 尾1、尾2、尾3 (并集)<br>
                         ✅ 杀码： 杀5 杀10 排除指定数字<br>
-                        ⚡ 示例：<span style="background:#e0eefc; padding:3px 6px; border-radius:12px;">春 美 红</span> → 春且美且红
+						✅ 不同条件请用空格间隔<br>
+                        ⚡ 示例：<span style="background:#e0eefc; padding:3px 6px; border-radius:12px;">春 美 红</span> → 春+美+红 三个条件交集
                     </div>
                     <div class="legend-tip">
                         <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 红波</span>
@@ -758,54 +758,67 @@
             initWelcome();
         }
 
-        // ---------- 键盘防遮挡方案 ----------
+        // ---------- 终极键盘防遮挡方案：调整容器高度为可视区域高度 ----------
         let isKeyboardVisible = false;
+        let lastContainerHeight = window.innerHeight;
 
-        function adjustForKeyboard() {
+        function adjustContainerHeight() {
             if (!window.visualViewport) return;
 
             const visualViewport = window.visualViewport;
-            const keyboardHeight = window.innerHeight - visualViewport.height;
-            const effectiveKeyboardHeight = Math.max(0, keyboardHeight);
+            // 可视区域高度（即除去键盘和浏览器UI后的实际内容区域）
+            const availableHeight = visualViewport.height;
+            // 键盘高度 = 布局视口高度 - 可视区域高度
+            const keyboardHeight = window.innerHeight - availableHeight;
 
-            if (effectiveKeyboardHeight > 50) {
-                // 键盘弹出
-                if (!isKeyboardVisible) {
-                    isKeyboardVisible = true;
-                }
-                inputArea.style.transform = `translateY(-${effectiveKeyboardHeight}px)`;
-                messageList.style.paddingBottom = effectiveKeyboardHeight + 'px';
+            // 设置容器高度为可视区域高度，使整个界面刚好在键盘上方
+            chatContainer.style.height = availableHeight + 'px';
+
+            // 如果键盘弹出，增加消息列表底部内边距，避免最后一条消息被输入栏遮挡
+            if (keyboardHeight > 50) {
+                isKeyboardVisible = true;
+                // 输入栏高度约 70px，可动态获取
+                const inputHeight = inputArea.offsetHeight;
+                messageList.style.paddingBottom = (keyboardHeight + inputHeight) + 'px';
+                // 滚动到底部
                 setTimeout(() => {
                     messageList.scrollTop = messageList.scrollHeight;
                 }, 50);
             } else {
-                // 键盘隐藏
                 if (isKeyboardVisible) {
                     isKeyboardVisible = false;
-                    inputArea.style.transform = '';
                     messageList.style.paddingBottom = '';
                 }
             }
         }
 
+        // 监听 visualViewport 变化（最精确）
         if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', adjustForKeyboard);
+            window.visualViewport.addEventListener('resize', adjustContainerHeight);
         }
-        window.addEventListener('resize', adjustForKeyboard);
 
+        // 监听 resize 作为后备
+        window.addEventListener('resize', adjustContainerHeight);
+
+        // 输入框聚焦时强制调整
         messageInput.addEventListener('focus', () => {
-            setTimeout(adjustForKeyboard, 100);
+            setTimeout(adjustContainerHeight, 100);
         });
 
+        // 输入框失焦时恢复
         messageInput.addEventListener('blur', () => {
-            setTimeout(adjustForKeyboard, 200);
+            setTimeout(adjustContainerHeight, 200);
         });
 
+        // 发送按钮点击时收起键盘并调整
         sendBtn.addEventListener('click', () => {
             messageInput.blur();
         });
 
-        window.addEventListener('load', adjustForKeyboard);
+        // 初始化调整
+        window.addEventListener('load', adjustContainerHeight);
+        // 也处理 orientationchange
+        window.addEventListener('orientationchange', adjustContainerHeight);
 
         // 事件绑定
         sendBtn.addEventListener('click', sendMessage);
