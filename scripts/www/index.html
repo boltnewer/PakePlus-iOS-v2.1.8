@@ -21,13 +21,12 @@
             align-items: center;
             padding: 0;
             margin: 0;
-            /* 移除 overflow: hidden，让容器控制滚动 */
         }
 
         .chat-container {
             width: 100%;
             max-width: 950px;
-            height: 100vh; /* 动态调整 */
+            height: 100vh; /* 初始全屏 */
             background-color: #f0f2f5;
             border-radius: 10px 10px 5px 5px;
             box-shadow: 0 6px 24px rgba(0,0,0,0.15);
@@ -36,7 +35,6 @@
             overflow: hidden;
             border: 1px solid rgba(0,0,0,0.05);
             position: relative;
-            transition: height 0.1s ease; /* 平滑过渡 */
         }
 
         .chat-header {
@@ -189,7 +187,7 @@
             border-radius: 30px;
         }
 
-        /* 输入栏默认在底部 */
+        /* 输入栏默认相对定位在flex流中 */
         .input-area {
             background: #f0f2f5;
             padding: 12px 16px;
@@ -199,6 +197,21 @@
             border-top: 1px solid #e9edef;
             flex-shrink: 0;
             width: 100%;
+            transition: none; /* 不使用过渡，避免闪烁 */
+            z-index: 10;
+        }
+
+        /* 当键盘弹出时，输入栏变为fixed定位，并配合transform上移 */
+        .input-area.fixed-keyboard {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transform: translateY(-100%);
+            border-radius: 0;
+            margin: 0 auto;
+            max-width: 950px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
         }
 
         .input-area .text-input {
@@ -689,7 +702,7 @@
 
         function buildResultMessage(numbers, userText) {
             if (numbers.length === 0) {
-                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红 大 男</div>`;
+                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红波 大 男</div>`;
             }
             let chipsHtml = '';
             numbers.forEach(num => {
@@ -712,12 +725,12 @@
             }
             const currentTrial = getTrialInfo();
             if (!currentTrial.isValid) {
-                addMessage(`<div style="color:#e67e22;">⚠️ 您的30天试用期已结束，筛选功能已禁用。如需购买请联系微信号：${CONTACT_WECHAT}</div>`, 'bot');
+                addMessage(`<div style="color:#e67e22;">⚠️ 您的30天试用期已结束，筛选功能已禁用。如需继续使用请联系微信号：${CONTACT_WECHAT}</div>`, 'bot');
                 return;
             }
             if (currentTrial.daysLeft <= WARNING_DAYS && currentTrial.daysLeft > 0) {
                 const daysLeftRounded = Math.ceil(currentTrial.daysLeft);
-                addMessage(`<div style="color:#e67e22;">🔔 您的试用期剩余 ${daysLeftRounded} 天，到期后将无法使用。如需购买请联系微信号：${CONTACT_WECHAT}</div>`, 'bot');
+                addMessage(`<div style="color:#e67e22;">🔔 您的试用期剩余 ${daysLeftRounded} 天，到期后将无法使用。如需继续使用请联系微信号：${CONTACT_WECHAT}</div>`, 'bot');
             }
             addMessage(`<div>${inputText.replace(/</g,'&lt;')}</div>`, 'user');
             const numbers = parseConditionsFromText(inputText);
@@ -740,7 +753,7 @@
                         ✅ “尾123” → 尾1、尾2、尾3 (并集)<br>
                         ✅ 杀码： 杀5 杀10 排除指定数字<br>
 						✅ 不同条件请用空格间隔<br>
-                        ⚡ 示例：<span style="background:#e0eefc; padding:3px 6px; border-radius:12px;">春 美 红</span> → 春+美+红 三个条件交集
+                        ⚡ 示例：<span style="background:#e0eefc; padding:3px 6px; border-radius:12px;">春 美 红</span> → 春+美+红 交集
                     </div>
                     <div class="legend-tip">
                         <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 红波</span>
@@ -758,67 +771,102 @@
             initWelcome();
         }
 
-        // ---------- 终极键盘防遮挡方案：调整容器高度为可视区域高度 ----------
-        let isKeyboardVisible = false;
-        let lastContainerHeight = window.innerHeight;
+        // ---------- 最终防遮挡方案：将输入栏固定在键盘上方 ----------
+        let isKeyboardFixed = false;
+        let lastWindowHeight = window.innerHeight;
+        let checkInterval = null;
+        let keyboardHeight = 0;
 
-        function adjustContainerHeight() {
-            if (!window.visualViewport) return;
+        function updateKeyboardHeight() {
+            const currentHeight = window.innerHeight;
+            const diff = lastWindowHeight - currentHeight;
+            // 如果高度差大于100，认为键盘弹出
+            if (diff > 100) {
+                keyboardHeight = diff;
+                return true;
+            }
+            return false;
+        }
 
-            const visualViewport = window.visualViewport;
-            // 可视区域高度（即除去键盘和浏览器UI后的实际内容区域）
-            const availableHeight = visualViewport.height;
-            // 键盘高度 = 布局视口高度 - 可视区域高度
-            const keyboardHeight = window.innerHeight - availableHeight;
-
-            // 设置容器高度为可视区域高度，使整个界面刚好在键盘上方
-            chatContainer.style.height = availableHeight + 'px';
-
-            // 如果键盘弹出，增加消息列表底部内边距，避免最后一条消息被输入栏遮挡
-            if (keyboardHeight > 50) {
-                isKeyboardVisible = true;
-                // 输入栏高度约 70px，可动态获取
+        function applyKeyboardFix() {
+            if (!isKeyboardFixed) {
+                isKeyboardFixed = true;
+                inputArea.classList.add('fixed-keyboard');
+                // 计算键盘高度，设置transform
+                if (keyboardHeight > 0) {
+                    inputArea.style.transform = `translateY(-${keyboardHeight}px)`;
+                }
+                // 增加消息列表底部内边距，避免最后一条消息被输入栏遮挡
                 const inputHeight = inputArea.offsetHeight;
                 messageList.style.paddingBottom = (keyboardHeight + inputHeight) + 'px';
                 // 滚动到底部
                 setTimeout(() => {
                     messageList.scrollTop = messageList.scrollHeight;
                 }, 50);
-            } else {
-                if (isKeyboardVisible) {
-                    isKeyboardVisible = false;
-                    messageList.style.paddingBottom = '';
-                }
             }
         }
 
-        // 监听 visualViewport 变化（最精确）
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener('resize', adjustContainerHeight);
+        function removeKeyboardFix() {
+            if (isKeyboardFixed) {
+                isKeyboardFixed = false;
+                inputArea.classList.remove('fixed-keyboard');
+                inputArea.style.transform = '';
+                messageList.style.paddingBottom = '';
+                // 恢复窗口高度记录
+                lastWindowHeight = window.innerHeight;
+            }
         }
 
-        // 监听 resize 作为后备
-        window.addEventListener('resize', adjustContainerHeight);
+        function checkKeyboard() {
+            if (document.activeElement === messageInput) {
+                const hasKeyboard = updateKeyboardHeight();
+                if (hasKeyboard) {
+                    applyKeyboardFix();
+                } else {
+                    // 如果键盘已弹出但高度差消失（可能由于某些原因），重新计算
+                    if (isKeyboardFixed) {
+                        // 重新获取高度
+                        updateKeyboardHeight();
+                        if (keyboardHeight > 0) {
+                            inputArea.style.transform = `translateY(-${keyboardHeight}px)`;
+                            messageList.style.paddingBottom = (inputArea.offsetHeight + keyboardHeight) + 'px';
+                        } else {
+                            removeKeyboardFix();
+                        }
+                    }
+                }
+            } else {
+                removeKeyboardFix();
+            }
+        }
 
-        // 输入框聚焦时强制调整
+        // 监听输入框焦点
         messageInput.addEventListener('focus', () => {
-            setTimeout(adjustContainerHeight, 100);
+            lastWindowHeight = window.innerHeight; // 重新记录
+            if (checkInterval) clearInterval(checkInterval);
+            checkInterval = setInterval(checkKeyboard, 100);
         });
 
-        // 输入框失焦时恢复
         messageInput.addEventListener('blur', () => {
-            setTimeout(adjustContainerHeight, 200);
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
+            removeKeyboardFix();
         });
 
-        // 发送按钮点击时收起键盘并调整
         sendBtn.addEventListener('click', () => {
             messageInput.blur();
         });
 
-        // 初始化调整
-        window.addEventListener('load', adjustContainerHeight);
-        // 也处理 orientationchange
-        window.addEventListener('orientationchange', adjustContainerHeight);
+        // 监听窗口resize作为后备
+        window.addEventListener('resize', () => {
+            if (document.activeElement === messageInput) {
+                checkKeyboard();
+            } else {
+                removeKeyboardFix();
+            }
+        });
 
         // 事件绑定
         sendBtn.addEventListener('click', sendMessage);
@@ -840,7 +888,7 @@
                 const daysLeftInt = Math.ceil(trial.daysLeft);
                 daysLeftMsg = `剩余${daysLeftInt}天`;
             }
-            addMessage('💡 可用条件：生肖(马蛇龙兔虎牛鼠猪狗鸡猴羊)、红/蓝/绿、大/小、单/双、头0-4、尾0-9、合大/小/单/双、家/野、天/地、金木水火土、1-7段、男女、春夏秋冬、风雨雷电、琴棋书画、美丑。杀码(杀数字)。连写如“尾123”自动拆分。' + daysLeftMsg + '，到期停用，如需购买请联系微信号：' + CONTACT_WECHAT, 'bot');
+            addMessage('💡 可用条件：生肖(马蛇龙兔虎牛鼠猪狗鸡猴羊)、红/蓝/绿、大/小、单/双、头0-4、尾0-9、合大/小/单/双、家/野、天/地、金木水火土、1-7段、男女、春夏秋冬、风雨雷电、琴棋书画、美丑。杀码(杀数字)。连写如“尾123”自动拆分。' + daysLeftMsg + '，到期停用，如需继续使用请联系微信号：' + CONTACT_WECHAT, 'bot');
         });
 
         // 启动
