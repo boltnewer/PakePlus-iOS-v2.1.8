@@ -21,12 +21,13 @@
             align-items: center;
             padding: 0;
             margin: 0;
+            overflow: hidden; /* 防止body滚动 */
         }
 
         .chat-container {
             width: 100%;
             max-width: 950px;
-            height: 100vh; /* 初始全屏 */
+            height: 100vh;
             background-color: #f0f2f5;
             border-radius: 10px 10px 5px 5px;
             box-shadow: 0 6px 24px rgba(0,0,0,0.15);
@@ -37,14 +38,17 @@
             position: relative;
         }
 
-        .chat-header {
+        /* 顶部区域：包含标题和输入栏 */
+        .top-section {
             background: #ffffff;
+            border-bottom: 1px solid #e9edef;
+            flex-shrink: 0;
+        }
+
+        .chat-header {
             padding: 10px 10px;
             display: flex;
             align-items: center;
-            border-bottom: 1px solid #e9edef;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-            flex-shrink: 0;
         }
 
         .chat-header h2 {
@@ -85,6 +89,51 @@
             background: #f0f2f5;
         }
 
+        /* 输入栏放在顶部 */
+        .input-area {
+            background: #f0f2f5;
+            padding: 10px 16px 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-top: 1px solid #e9edef; /* 与header分隔 */
+        }
+
+        .input-area .text-input {
+            flex: 1;
+            border: none;
+            background: white;
+            border-radius: 24px;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            min-width: 0;
+        }
+
+        .input-area .send-btn {
+            background: #02b875;
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 3px 6px rgba(2,184,117,0.2);
+            transition: background 0.2s, transform 0.1s;
+            flex-shrink: 0;
+        }
+
+        .input-area .send-btn:active {
+            background: #029d62;
+            transform: scale(0.95);
+        }
+
+        /* 消息列表区域 */
         .message-list {
             flex: 1;
             overflow-y: auto;
@@ -95,7 +144,6 @@
             background: #efeae2;
             background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23efeae2" opacity="0.4"/></svg>');
             -webkit-overflow-scrolling: touch;
-            transition: padding-bottom 0.2s ease;
         }
 
         .message-row {
@@ -187,67 +235,6 @@
             border-radius: 30px;
         }
 
-        /* 输入栏默认相对定位在flex流中 */
-        .input-area {
-            background: #f0f2f5;
-            padding: 12px 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-top: 1px solid #e9edef;
-            flex-shrink: 0;
-            width: 100%;
-            transition: none; /* 不使用过渡，避免闪烁 */
-            z-index: 10;
-        }
-
-        /* 当键盘弹出时，输入栏变为fixed定位，并配合transform上移 */
-        .input-area.fixed-keyboard {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            transform: translateY(-100%);
-            border-radius: 0;
-            margin: 0 auto;
-            max-width: 950px;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-        }
-
-        .input-area .text-input {
-            flex: 1;
-            border: none;
-            background: white;
-            border-radius: 24px;
-            padding: 12px 18px;
-            font-size: 0.95rem;
-            outline: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-            min-width: 0;
-        }
-
-        .input-area .send-btn {
-            background: #02b875;
-            border: none;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            color: white;
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            box-shadow: 0 3px 6px rgba(2,184,117,0.2);
-            transition: background 0.2s, transform 0.1s;
-            flex-shrink: 0;
-        }
-
-        .input-area .send-btn:active {
-            background: #029d62;
-            transform: scale(0.95);
-        }
-
         .legend-tip {
             display: flex;
             flex-wrap: wrap;
@@ -285,21 +272,29 @@
             text-align: center;
             font-size: 0.7rem;
             color: #8596a0;
-            padding: 6px 0;
+            padding: 4px 0;
             background: #f0f2f5;
+            border-top: 1px solid #e9edef;
             flex-shrink: 0;
         }
     </style>
 </head>
 <body>
-<div class="chat-container" id="chatContainer">
-    <div class="chat-header">
-        <h2>
-            <i class="fas fa-robot"></i> 智能挑码助手
-        </h2>
-        <div class="actions">
-            <button id="clearChatBtn" title="清空聊天"><i class="fas fa-trash-alt"></i></button>
-            <button id="helpBtn" title="使用示例"><i class="fas fa-question-circle"></i></button>
+<div class="chat-container">
+    <!-- 顶部区域：包含标题和输入栏 -->
+    <div class="top-section">
+        <div class="chat-header">
+            <h2>
+                <i class="fas fa-robot"></i> 智能挑码助手
+            </h2>
+            <div class="actions">
+                <button id="clearChatBtn" title="清空聊天"><i class="fas fa-trash-alt"></i></button>
+                <button id="helpBtn" title="使用示例"><i class="fas fa-question-circle"></i></button>
+            </div>
+        </div>
+        <div class="input-area" id="inputArea">
+            <input type="text" class="text-input" id="messageInput" placeholder="例如：尾123 红 大 男" autocomplete="off">
+            <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
@@ -307,10 +302,6 @@
         <!-- 动态消息 -->
     </div>
 
-    <div class="input-area" id="inputArea">
-        <input type="text" class="text-input" id="messageInput" placeholder="例如：尾123 红 大 男" autocomplete="off">
-        <button class="send-btn" id="sendBtn"><i class="fas fa-paper-plane"></i></button>
-    </div>
     <footer>© 智能挑码机器人</footer>
 </div>
 
@@ -681,8 +672,6 @@
         const sendBtn = document.getElementById('sendBtn');
         const clearChatBtn = document.getElementById('clearChatBtn');
         const helpBtn = document.getElementById('helpBtn');
-        const chatContainer = document.getElementById('chatContainer');
-        const inputArea = document.getElementById('inputArea');
 
         function addMessage(contentHtml, type = 'bot') {
             const row = document.createElement('div');
@@ -702,7 +691,7 @@
 
         function buildResultMessage(numbers, userText) {
             if (numbers.length === 0) {
-                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红波 大 男</div>`;
+                return `<div><i class="fa fa-times-circle" style="color:#e74c3c"></i> 没有符合条件的数字。<br>试试其他组合，例如：红 大 男</div>`;
             }
             let chipsHtml = '';
             numbers.forEach(num => {
@@ -743,7 +732,7 @@
             if (text === '') return;
             handleUserInput(text);
             messageInput.value = '';
-            messageInput.blur();
+            messageInput.blur(); // 发送后收起键盘
         }
 
         function initWelcome() {
@@ -752,14 +741,14 @@
                     <div class="example-hint">
                         ✅ “尾123” → 尾1、尾2、尾3 (并集)<br>
                         ✅ 杀码： 杀5 杀10 排除指定数字<br>
-						✅ 不同条件请用空格间隔<br>
+                        ✅ 不同条件之间请用空格分隔<br>
                         ⚡ 示例：<span style="background:#e0eefc; padding:3px 6px; border-radius:12px;">春 美 红</span> → 春+美+红 交集
                     </div>
                     <div class="legend-tip">
                         <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 红波</span>
                         <span class="legend-item"><span class="legend-dot" style="background:#3498db;"></span> 蓝波</span>
                         <span class="legend-item"><span class="legend-dot" style="background:#2ecc71;"></span> 绿波</span>
-                        <span class="legend-item">数字旁小字为生肖</span>
+                        <span class="legend-item">数字旁为生肖</span>
                     </div>
                 </div>
             `;
@@ -771,101 +760,11 @@
             initWelcome();
         }
 
-        // ---------- 最终防遮挡方案：将输入栏固定在键盘上方 ----------
-        let isKeyboardFixed = false;
-        let lastWindowHeight = window.innerHeight;
-        let checkInterval = null;
-        let keyboardHeight = 0;
-
-        function updateKeyboardHeight() {
-            const currentHeight = window.innerHeight;
-            const diff = lastWindowHeight - currentHeight;
-            // 如果高度差大于100，认为键盘弹出
-            if (diff > 100) {
-                keyboardHeight = diff;
-                return true;
-            }
-            return false;
-        }
-
-        function applyKeyboardFix() {
-            if (!isKeyboardFixed) {
-                isKeyboardFixed = true;
-                inputArea.classList.add('fixed-keyboard');
-                // 计算键盘高度，设置transform
-                if (keyboardHeight > 0) {
-                    inputArea.style.transform = `translateY(-${keyboardHeight}px)`;
-                }
-                // 增加消息列表底部内边距，避免最后一条消息被输入栏遮挡
-                const inputHeight = inputArea.offsetHeight;
-                messageList.style.paddingBottom = (keyboardHeight + inputHeight) + 'px';
-                // 滚动到底部
-                setTimeout(() => {
-                    messageList.scrollTop = messageList.scrollHeight;
-                }, 50);
-            }
-        }
-
-        function removeKeyboardFix() {
-            if (isKeyboardFixed) {
-                isKeyboardFixed = false;
-                inputArea.classList.remove('fixed-keyboard');
-                inputArea.style.transform = '';
-                messageList.style.paddingBottom = '';
-                // 恢复窗口高度记录
-                lastWindowHeight = window.innerHeight;
-            }
-        }
-
-        function checkKeyboard() {
-            if (document.activeElement === messageInput) {
-                const hasKeyboard = updateKeyboardHeight();
-                if (hasKeyboard) {
-                    applyKeyboardFix();
-                } else {
-                    // 如果键盘已弹出但高度差消失（可能由于某些原因），重新计算
-                    if (isKeyboardFixed) {
-                        // 重新获取高度
-                        updateKeyboardHeight();
-                        if (keyboardHeight > 0) {
-                            inputArea.style.transform = `translateY(-${keyboardHeight}px)`;
-                            messageList.style.paddingBottom = (inputArea.offsetHeight + keyboardHeight) + 'px';
-                        } else {
-                            removeKeyboardFix();
-                        }
-                    }
-                }
-            } else {
-                removeKeyboardFix();
-            }
-        }
-
-        // 监听输入框焦点
+        // 键盘弹出时滚动消息列表到底部（可选）
         messageInput.addEventListener('focus', () => {
-            lastWindowHeight = window.innerHeight; // 重新记录
-            if (checkInterval) clearInterval(checkInterval);
-            checkInterval = setInterval(checkKeyboard, 100);
-        });
-
-        messageInput.addEventListener('blur', () => {
-            if (checkInterval) {
-                clearInterval(checkInterval);
-                checkInterval = null;
-            }
-            removeKeyboardFix();
-        });
-
-        sendBtn.addEventListener('click', () => {
-            messageInput.blur();
-        });
-
-        // 监听窗口resize作为后备
-        window.addEventListener('resize', () => {
-            if (document.activeElement === messageInput) {
-                checkKeyboard();
-            } else {
-                removeKeyboardFix();
-            }
+            setTimeout(() => {
+                messageList.scrollTop = messageList.scrollHeight;
+            }, 300);
         });
 
         // 事件绑定
